@@ -37,7 +37,6 @@ public class ApiController {
                     body(new ErrorResponse("Данная страница находится за пределами сайтов указанных в конфигурационном файле"));
         }
         CheckLink checkLink = pageService.checkLink(checkUrl);
-        System.out.println("checkLink result: " + checkLink.isResult());
         if (!checkLink.isResult()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).
                     body(new ErrorResponse("Ссылка не соответствует параметрам"));
@@ -48,13 +47,11 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity startIndexing() throws InterruptedException {
-        log.info("start of method startIndexing()");
         return siteService.startIndexing();
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity stopIndexing() throws InterruptedException {
-        log.info("start of method stopIndexing()");
         return siteService.stopIndexing();
     }
 
@@ -63,12 +60,8 @@ public class ApiController {
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String site,
             @RequestParam(required = false, defaultValue = "0") Integer offset,
-            @RequestParam(required = false, defaultValue = "5") Integer limit
+            @RequestParam(required = false, defaultValue = "10") Integer limit
     ) throws IOException {
-        System.out.println("query: " + query);
-        System.out.println("site: " + site);
-        System.out.println("offset: " + offset);
-        System.out.println("limit: " + limit);
         if (query == null || query.isBlank()) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Задан пустой поисковый запрос"));
         }

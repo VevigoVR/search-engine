@@ -74,7 +74,6 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public CheckLink checkLink(CheckLink checkLink) {
-        System.out.println(checkLink.toString());
         if (urlNotToImgOrSmthForOnePage(checkLink.getFullLink(), checkLink.getSiteEntity().getUrl())) {
             checkLink.setResult(true);
         } else {
@@ -112,20 +111,18 @@ public class PageServiceImpl implements PageService {
     }
 
     private ParseDTO parseHTML(String url) throws IOException {
-        System.out.println("Попытка подключения: " +  url);
         Elements urls = null;
         Document doc = null;
         int code = 0;
         try {
             Connection.Response connection = Jsoup.connect(url)
-                    .userAgent("CreazioneSearchBot")
+                    .userAgent("SearchBot")
                     .timeout(20000)
                     .execute();
             code = connection.statusCode();
             doc = connection.parse();
         } catch (HttpStatusException exception) {
-            System.out.println(exception);
-            log.info("HttpStatusException exception да уж");
+            System.out.println("http exception: " + exception.getUrl());
         }
 
         if (doc != null) {
@@ -140,10 +137,8 @@ public class PageServiceImpl implements PageService {
     }
 
     private void removeOldPageData(PageEntity pageEntity, SiteEntity siteEntity) throws IOException {
-        // Удаляем индексы старой страницы
         List<IndexEntity> indexes = DataSet.getIndexService().findAllByPageId(pageEntity);
         DataSet.getIndexService().deleteAll(indexes);
-        // Удаляем леммы старой страницы
         LemmaFinder lemmaFinder = LemmaFinder.getInstance();
         Document doc = Jsoup.parse(pageEntity.getContent());
         Map<String, Integer> lemmasMap = lemmaFinder.collectLemmas(doc.text());

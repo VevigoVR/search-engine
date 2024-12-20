@@ -37,10 +37,8 @@ public class FindService implements Runnable {
         for (Site site : DataSet.getSites()) {
             SiteEntity siteEntityFromDB = siteService.findByUrl(siteEntity.getUrl());
             // если останавливается пользователем (StatusSite.STOPPING)
-            System.out.println("Остановка: " + site.getUrl() + " - " + siteEntity.getUrl());
             if(site.getUrl().equals(siteEntity.getUrl()) && site.getStatus().equals(StatusSite.STOPPING)) {
                 List<Runnable> pool = forkJoinPool.shutdownNow();
-                pool.forEach(t -> System.out.println("потоки для закрытия: " + t.toString()));
                 pool.clear();
                 site.setStatus(StatusSite.FAILED);
                 siteEntityFromDB.setStatus(StatusSite.FAILED);

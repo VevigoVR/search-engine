@@ -32,17 +32,9 @@ public class IndexServiceImpl implements IndexService {
             return;
         }
         SiteEntity siteEntity = DataSet.getSiteService().findById(site);
-        log.info("ЗАШЛИ В ФУНКЦИЮ saveToIndex");
         List<LemmaEntity> lemmasFromDB = lemmaRepository.findAllByLemmaInAndSiteEntityId(lemmaMap.keySet().stream().toList(), siteEntity);
-        System.out.println("Леммы:");
-        for (LemmaEntity lemma : lemmasFromDB) {
-            System.out.println(lemma.getLemma() + ", id " + lemma.getId());
-        }
-        System.out.println("Страница:");
         PageEntity pageEntity = DataSet.getPageService().findById(page);
-        System.out.println(page.getPath() + ", id" + page.getId());
         List<IndexEntity> indexList = new ArrayList<>();
-        System.out.println(lemmasFromDB.size());
         if (lemmasFromDB.isEmpty()) { return; }
         for (LemmaEntity lemma : lemmasFromDB) {
             for (String lemmaName : lemmaMap.keySet()) {
@@ -55,10 +47,6 @@ public class IndexServiceImpl implements IndexService {
                     break;
                 }
             }
-        }
-        //System.out.println("Индексы в запись:");
-        for (IndexEntity index : indexList) {
-        //    System.out.println(index.getLemmaId().getLemma());
         }
         saveAll(indexList);
     }

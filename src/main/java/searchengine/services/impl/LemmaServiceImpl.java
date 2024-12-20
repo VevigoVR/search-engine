@@ -53,9 +53,6 @@ public class LemmaServiceImpl implements LemmaService {
         page = Jsoup.parse(page).text();
         LemmaFinder lemmaFinder = LemmaFinder.getInstance();
         Map<String, Integer> lemmas = lemmaFinder.collectLemmas(page);
-        for (String lemma : lemmas.keySet()) {
-            System.out.println(lemma + " / " + lemmas.get(lemma));
-        }
         return lemmas;
     }
 
@@ -77,12 +74,6 @@ public class LemmaServiceImpl implements LemmaService {
         Map<String, Integer> lemmas = lemmaFinder.collectLemmas(doc);
         List<String> lemmaNames = new ArrayList<>(lemmas.keySet());
         insertOrUpdateLemmaFromTable(lemmaNames, siteEntity);
-        //System.out.println("Леммы в Map:");
-        for (String lemma : lemmas.keySet()) {
-        //    System.out.println(lemma);
-        }
-        //System.out.println("page.toString(): " + page.getPath() + ", id" + page.getId());
-        //System.out.println("siteEntity.toString(): " + siteEntity.toString());
         indexService.saveToIndex(lemmas, page, siteEntity);
     }
 

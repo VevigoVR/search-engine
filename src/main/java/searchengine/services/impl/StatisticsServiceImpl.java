@@ -51,7 +51,6 @@ public class StatisticsServiceImpl implements StatisticsService {
             total.setPages(total.getPages() + pages);
             total.setLemmas(total.getLemmas() + lemmas);
             detailed.add(item);
-            log.info("Статус сайта: " + site.getStatus().name());
         }
 
         StatisticsResponse response = new StatisticsResponse();

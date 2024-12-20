@@ -31,13 +31,11 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     public ResponseEntity startIndexing() {
-        // Если хоть один сайт из списка имеет статус STOPPING
         if (DataSet.isSitesStopping()) {
             ErrorResponse errorResponse =  new ErrorResponse("Индексация запущена, но уже останавливается");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         }
 
-        // Если хоть один сайт из базы данных имеет статус INDEXING
         if (isSitesIndexing()) {
             ErrorResponse errorResponse =  new ErrorResponse("Индексация уже запущена");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
@@ -47,7 +45,6 @@ public class SiteServiceImpl implements SiteService {
         List<SiteEntity> siteEntities = saveAll(StatusSite.INDEXING);
 
         for (SiteEntity site : siteEntities) {
-            System.out.println(site);
             new Thread(new FindService(site, this)).start();
         }
 
@@ -56,21 +53,17 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     public ResponseEntity stopIndexing() {
-
-        // Если хоть один сайт из списка имеет статус STOPPING
         if (DataSet.isSitesStopping()) {
             ErrorResponse errorResponse =  new ErrorResponse("Индексация уже останавливается");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         }
 
-        // Если ни один сайт из базы данных не имеет статус INDEXING
         if (!isSitesIndexing()) {
             ErrorResponse errorResponse =  new ErrorResponse("Индексация не запущена");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         }
 
         DataSet.setSitesStatus(StatusSite.STOPPING, StatusSite.INDEXED);
-
         return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse());
     }
 
@@ -88,7 +81,7 @@ public class SiteServiceImpl implements SiteService {
             siteEntity.setUrl(toStandart(site.getUrl()));
             siteEntity.setStatus(statusSite);
             if (statusSite.equals(StatusSite.STOP)) {
-                siteEntity.setLastError("сайт ещё не индексировался");
+                siteEntity.setLastError("сайт не индексировался");
             }
             siteEntity.setStatusTime(new Date());
             siteEntity.setPages(null);
@@ -148,7 +141,6 @@ public class SiteServiceImpl implements SiteService {
         if (siteEntityOne.getStatus().equals(StatusSite.FAILED)) {
             return false;
         }
-        log.info("update");
         siteEntityOne.setStatusTime(new Date());
         siteRepository.save(siteEntityOne);
         return true;

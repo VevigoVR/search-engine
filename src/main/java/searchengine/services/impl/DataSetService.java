@@ -21,12 +21,9 @@ public class DataSetService implements CommandLineRunner {
     private final PageService pageService;
 
     @Override
-    public void run(String... args) throws Exception {
-/*
+    public void run(String... args) {
         siteService.deleteAll();
         siteService.saveAll(StatusSite.STOP);
-
- */
         DataSet.setDataSet(sites);
     }
 }

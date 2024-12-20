@@ -46,7 +46,6 @@ public class PageFinder extends RecursiveAction {
     @Override
     synchronized
     protected void compute() {
-        System.out.println("текущая ссылка внутри сайта: " + url);
         if (DataSet.isSitesStopping()) {
             return;
         }
@@ -65,15 +64,11 @@ public class PageFinder extends RecursiveAction {
                 if (DataSet.isSitesStopping()) {
                     return;
                 }
-                System.out.println("link: " + link);
                 UrlDTO urlDTO = constractUrlFromThisSite(link);
-                System.out.println("URL DTO: " + urlDTO);
                 if (!urlDTO.isEnabled()) { continue; }
                 link = removeParamFromLink(urlDTO.getLink());
-                System.out.println("link2: " + link);
                 if (!DataSet.getPageService().urlNotToImgOrSmth(link)) { continue; }
                 if (!findService.getAllLinks().add(link)) { continue; }
-                System.out.println("дошло сюда");
                 PageFinder newHTMLReader = new PageFinder(findService, urlDTO.getUrl(), siteEntity, forkJoinPool);
 
                 PageEntity page = new PageEntity();
@@ -94,7 +89,6 @@ public class PageFinder extends RecursiveAction {
                 tasks.add(newHTMLReader);
             }
         } catch (InterruptedException interruptedException) {
-            System.out.println("Индексация сайта " + siteEntity.getName() + " остановлена");
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -118,20 +112,17 @@ public class PageFinder extends RecursiveAction {
     }
 
     private ParseDTO parseHTML(String url) throws IOException {
-        System.out.println("Попытка подключения: " +  url);
         Elements urls = null;
         Document doc = null;
         int code = 0;
         try {
             Connection.Response connection = Jsoup.connect(url)
-                    .userAgent("CreazioneSearchBot")
+                    .userAgent("SearchBot")
                     .timeout(20000)
                     .execute();
             code = connection.statusCode();
             doc = connection.parse();
         } catch (HttpStatusException exception) {
-            System.out.println(exception);
-            log.info("HttpStatusException exception да уж");
         }
 
         if (doc != null) {
