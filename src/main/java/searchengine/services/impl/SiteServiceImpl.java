@@ -2,8 +2,6 @@ package searchengine.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.config.DataSet;
 import searchengine.config.Site;
@@ -11,11 +9,13 @@ import searchengine.config.SitesList;
 import searchengine.dto.CheckLink;
 import searchengine.dto.StatusSite;
 import searchengine.dto.entity.SiteEntity;
-import searchengine.dto.response.ErrorResponse;
 import searchengine.dto.response.SuccessResponse;
+import searchengine.exceptions.MyBadRequestException;
+import searchengine.exceptions.MyConflictRequestException;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.SiteService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,41 +30,32 @@ public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
 
     @Override
-    public ResponseEntity startIndexing() {
+    public SuccessResponse startIndexing() {
         if (DataSet.isSitesStopping()) {
-            ErrorResponse errorResponse =  new ErrorResponse("Индексация запущена, но уже останавливается");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+            throw new MyConflictRequestException("Индексация запущена, но уже останавливается");
         }
-
         if (isSitesIndexing()) {
-            ErrorResponse errorResponse =  new ErrorResponse("Индексация уже запущена");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+            throw new MyConflictRequestException("Индексация уже запущена");
         }
-
         deleteAll();
         List<SiteEntity> siteEntities = saveAll(StatusSite.INDEXING);
 
         for (SiteEntity site : siteEntities) {
             new Thread(new FindService(site, this)).start();
         }
-
-        return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse());
+        return new SuccessResponse();
     }
 
     @Override
-    public ResponseEntity stopIndexing() {
+    public SuccessResponse stopIndexing() {
         if (DataSet.isSitesStopping()) {
-            ErrorResponse errorResponse =  new ErrorResponse("Индексация уже останавливается");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+            throw new MyConflictRequestException("Индексация уже останавливается");
         }
-
         if (!isSitesIndexing()) {
-            ErrorResponse errorResponse =  new ErrorResponse("Индексация не запущена");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+            throw new MyConflictRequestException("Индексация не запущена");
         }
-
         DataSet.setSitesStatus(StatusSite.STOPPING, StatusSite.INDEXED);
-        return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse());
+        return new SuccessResponse();
     }
 
     @Override
@@ -188,5 +179,23 @@ public class SiteServiceImpl implements SiteService {
             url = url.replaceFirst("http://", "https://");
         }
         return url;
+    }
+
+    @Override
+    public SuccessResponse indexPage(String url) {
+        CheckLink checkUrl = checkUrlAndSetLink(url);
+        if (!checkUrl.isResult()) {
+            throw new MyBadRequestException("Данная страница находится за пределами сайтов указанных в конфигурационном файле");
+        }
+        CheckLink checkLink = DataSet.getPageService().checkLink(checkUrl);
+        if (!checkLink.isResult()) {
+            throw new MyBadRequestException("Ссылка не соответствует параметрам");
+        }
+        try {
+            DataSet.getPageService().indexPage(checkLink);
+        } catch (IOException e) {
+            log.info("Ошибка индексирования страницы");
+        }
+        return new SuccessResponse();
     }
 }

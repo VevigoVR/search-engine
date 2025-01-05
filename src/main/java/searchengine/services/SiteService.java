@@ -4,12 +4,14 @@ import org.springframework.http.ResponseEntity;
 import searchengine.dto.CheckLink;
 import searchengine.dto.StatusSite;
 import searchengine.dto.entity.SiteEntity;
+import searchengine.dto.response.SuccessResponse;
 
 import java.util.List;
 
 public interface SiteService {
-    ResponseEntity startIndexing();
-    ResponseEntity stopIndexing();
+    SuccessResponse startIndexing();
+    SuccessResponse stopIndexing();
+    SuccessResponse indexPage(String url);
 
     SiteEntity save(SiteEntity siteEntity);
     List<SiteEntity> saveAll(StatusSite statusSite);

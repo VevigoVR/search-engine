@@ -27,7 +27,8 @@ public class PageEntity {
     @Column(name = "code", nullable = false)
     private Integer code; // INT NOT NULL — код HTTP-ответа, полученный при запросе страницы (например, 200, 404, 500 или другие);
 
-    @Column(name = "content", nullable = false, columnDefinition = "MEDIUMTEXT")
+    //@Column(name = "content", nullable = false, columnDefinition = "MEDIUMTEXT")
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content; // MEDIUMTEXT NOT NULL — контент страницы (HTML-код).
 
     @OneToMany(mappedBy = "pageId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

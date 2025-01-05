@@ -14,6 +14,7 @@ import searchengine.dto.entity.LemmaEntity;
 import searchengine.dto.response.SearchDataResponse;
 import searchengine.dto.entity.SiteEntity;
 import searchengine.dto.response.SearchResponse;
+import searchengine.exceptions.MyBadRequestException;
 import searchengine.services.IndexService;
 import searchengine.services.PageService;
 import searchengine.services.SearchService;
@@ -208,10 +209,13 @@ public class SearchServiceImpl implements SearchService {
     }
 
     @Override
-    public ResponseEntity<Object> search(String query, String site, int offset, int limit) throws IOException {
+    public SearchResponse search(String query, String site, int offset, int limit) throws IOException {
+        if (query == null || query.isBlank()) {
+            throw new MyBadRequestException("Задан пустой поисковый запрос");
+        }
         List<LemmaEntity> lemmasFound = exclusionLemmasByFrequent(query, site);
         if (lemmasFound.isEmpty()) {
-            return ResponseEntity.ok(new SearchResponse(true, 0, Collections.emptyList()));
+            return new SearchResponse(true, 0, Collections.emptyList());
         }
 
         List<LemmaEntity> sortedLemmasToSearch = sortingLemmasByFrequent(lemmasFound);
@@ -219,7 +223,7 @@ public class SearchServiceImpl implements SearchService {
         Map<Integer, IndexEntity> indexesByLemmas = searchPagesByFirstLemma(sortedLemmasToSearch);
 
         if (indexesByLemmas.isEmpty()) {
-            return ResponseEntity.ok().body(new SearchResponse(true, 0, Collections.emptyList()));
+            return new SearchResponse(true, 0, Collections.emptyList());
         }
 
         Set<RankDTO> pagesRelevance = rankCalculation(indexesByLemmas);
@@ -235,7 +239,7 @@ public class SearchServiceImpl implements SearchService {
 
         List<SearchDataResponse> result = getLimitResult(sortedSearchDataResponse,offset, limit);
 
-        return ResponseEntity.ok(new SearchResponse(true, result.size(), result));
+        return new SearchResponse(true, result.size(), result);
     }
 
     private void markWord(StringBuilder textFromElement, String word, int startPosition) {

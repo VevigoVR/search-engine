@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+<changeSet id="2" author="my_liquibase">
+    <addUniqueConstraint columnNames="page_id, lemma_id" constraintName="keys_indexes" tableName="indexes"/>
+    <addUniqueConstraint columnNames="site_id, lemma" constraintName="keys_lemma" tableName="lemma"/>
+    <addUniqueConstraint columnNames="path, site_id" constraintName="keys_page" tableName="page"/>
+</changeSet>
+</databaseChangeLog>
