@@ -11,6 +11,7 @@ public interface PageService {
     long countBySiteEntityId(SiteEntity siteEntity);
     PageEntity save(PageEntity pageEntity);
     PageEntity findById(PageEntity pageEntity);
+    PageEntity findByPath(String path);
     void delete(PageEntity pageEntity);
 
     boolean urlNotToImgOrSmth(String link);

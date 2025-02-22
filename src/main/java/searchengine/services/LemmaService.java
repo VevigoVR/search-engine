@@ -16,7 +16,7 @@ public interface LemmaService {
     Map<String, Integer> getLemmasFromString(String page) throws IOException;
     List<LemmaEntity> findAllByLemmaInAndSiteEntityId(List<String> lemmas, SiteEntity site);
     void findAndAddLemmas(SiteEntity siteEntity, PageEntity page) throws IOException;
-    void insertOrUpdateLemmaFromTable(List<String> lemmas, SiteEntity siteEntity);
+    void insertOrUpdateLemmaFromTable(List<String> lemmas, SiteEntity siteEntity, PageEntity page);
     List<LemmaEntity> fromStringToObjects(List<String> lemmas, SiteEntity siteEntity);
     List<LemmaEntity> findAllBySiteEntityIdAndLemmaIn(SiteEntity siteEntity, List<String> lemmas);
     List<LemmaEntity> findAllByLemmaIn(List<String> lemmas);

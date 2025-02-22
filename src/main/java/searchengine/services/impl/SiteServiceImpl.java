@@ -39,7 +39,7 @@ public class SiteServiceImpl implements SiteService {
         }
         deleteAll();
         List<SiteEntity> siteEntities = saveAll(StatusSite.INDEXING);
-
+        DataSet.setSitesStatus(StatusSite.INDEXING, StatusSite.INDEXING);
         for (SiteEntity site : siteEntities) {
             new Thread(new FindService(site, this)).start();
         }

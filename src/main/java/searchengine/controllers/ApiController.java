@@ -45,8 +45,8 @@ public class ApiController {
     public SearchResponse search(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String site,
-            @RequestParam(required = false, defaultValue = "0") Integer offset,
-            @RequestParam(required = false, defaultValue = "10") Integer limit
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer limit
     ) throws IOException {
         return searchService.search(query, site, offset, limit);
     }

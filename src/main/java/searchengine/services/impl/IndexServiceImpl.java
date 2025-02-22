@@ -28,9 +28,6 @@ public class IndexServiceImpl implements IndexService {
 
     @Override
     public void saveToIndex(Map<String, Integer> lemmaMap, PageEntity page, SiteEntity site) {
-        if (DataSet.isSitesStopping()) {
-            return;
-        }
         SiteEntity siteEntity = DataSet.getSiteService().findById(site);
         List<LemmaEntity> lemmasFromDB = lemmaRepository.findAllByLemmaInAndSiteEntityId(lemmaMap.keySet().stream().toList(), siteEntity);
         PageEntity pageEntity = DataSet.getPageService().findById(page);
@@ -52,23 +49,17 @@ public class IndexServiceImpl implements IndexService {
     }
 
     private void saveAll(List<IndexEntity> indexes) {
-        if (DataSet.isSitesStopping()) {
-            return;
-        }
         indexRepository.saveAll(indexes);
     }
 
     @Override
     public List<IndexEntity> findAllByLemmaId(LemmaEntity lemma) {
-        if (DataSet.isSitesStopping()) {
-            return null;
-        }
         return indexRepository.findAllByLemmaId(lemma);
     }
 
     @Override
-    public List<IndexEntity> findIndexesByLemma(LemmaEntity lemmaEntity) {
-        return indexRepository.findAllByLemmaId(lemmaEntity);
+    public List<IndexEntity> findAllByLemmaIdIn(List<LemmaEntity> lemmas) {
+        return indexRepository.findAllByLemmaIdIn(lemmas);
     }
 
     @Override

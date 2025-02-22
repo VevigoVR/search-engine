@@ -7,9 +7,13 @@ import org.springframework.stereotype.Component;
 import searchengine.config.DataSet;
 import searchengine.config.SitesList;
 import searchengine.dto.StatusSite;
+import searchengine.dto.response.SearchDataResponse;
 import searchengine.services.LemmaService;
 import searchengine.services.PageService;
 import searchengine.services.SiteService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -22,8 +26,8 @@ public class DataSetService implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        siteService.deleteAll();
-        siteService.saveAll(StatusSite.STOP);
+        //siteService.deleteAll();
+        //siteService.saveAll(StatusSite.STOP);
         DataSet.setDataSet(sites);
     }
 }

@@ -52,6 +52,12 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
+    public PageEntity findByPath(String path) {
+        Optional<PageEntity> page = pageRepository.findByPath(path);
+        return page.orElse(null);
+    }
+
+    @Override
     public void indexPage(CheckLink checkLink) throws IOException {
         Optional<PageEntity> pageEntity = pageRepository.findByPathAndSiteEntityId(checkLink.getLink(), checkLink.getSiteEntity());
 

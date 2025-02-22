@@ -73,15 +73,15 @@ public class LemmaServiceImpl implements LemmaService {
         LemmaFinder lemmaFinder = LemmaFinder.getInstance();
         Map<String, Integer> lemmas = lemmaFinder.collectLemmas(doc);
         List<String> lemmaNames = new ArrayList<>(lemmas.keySet());
-        insertOrUpdateLemmaFromTable(lemmaNames, siteEntity);
+        insertOrUpdateLemmaFromTable(lemmaNames, siteEntity, page);
         indexService.saveToIndex(lemmas, page, siteEntity);
     }
 
     @Override
-    public void insertOrUpdateLemmaFromTable(List<String> lemmas, SiteEntity siteEntity) {
+    public void insertOrUpdateLemmaFromTable(List<String> lemmas, SiteEntity siteEntity, PageEntity page) {
+
         List<LemmaEntity> lemmasFromDB = findAllByLemmaInAndSiteEntityId(lemmas, siteEntity);
         List<LemmaEntity> lemmasFromPage = fromStringToObjects(lemmas, siteEntity);
-
         if (lemmasFromDB.isEmpty()) {
             saveAll(lemmasFromPage);
             return;

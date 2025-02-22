@@ -9,6 +9,7 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.springframework.dao.DataIntegrityViolationException;
 import searchengine.dto.ParseDTO;
 import searchengine.dto.UrlDTO;
 import searchengine.dto.entity.PageEntity;
@@ -16,6 +17,7 @@ import searchengine.dto.entity.SiteEntity;
 import searchengine.config.DataSet;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -46,7 +48,7 @@ public class PageFinder extends RecursiveAction {
     @Override
     synchronized
     protected void compute() {
-        if (DataSet.isSitesStopping()) {
+        if (DataSet.isSitesStop()) {
             return;
         }
         try {
@@ -60,8 +62,25 @@ public class PageFinder extends RecursiveAction {
                 links.add(element.attr("href"));
             });
 
+            PageEntity page = new PageEntity();
+            page.setSiteEntityId(siteEntity);
+            System.out.println("url: " + url);
+            System.out.println("path: " + url.replace(mainUrl, "/"));
+            System.out.println("mainUrl: " + mainUrl);
+            page.setPath(url.replace(mainUrl, "/"));
+            page.setContent(parseDTO.getDoc().toString());
+            page.setCode(parseDTO.getCode());
+            PageEntity pageFromDB = DataSet.getPageService().save(page);
+            DataSet.getSiteService().updateStatusTime(siteEntity);
+
+            if (pageFromDB != null) {
+                DataSet.getLemmaService().findAndAddLemmas(siteEntity, pageFromDB);
+            } else {
+                System.out.println("null");
+            }
+
             for (String link : links) {
-                if (DataSet.isSitesStopping()) {
+                if (DataSet.isSitesStop()) {
                     return;
                 }
                 UrlDTO urlDTO = constractUrlFromThisSite(link);
@@ -71,23 +90,15 @@ public class PageFinder extends RecursiveAction {
                 if (!findService.getAllLinks().add(link)) { continue; }
                 PageFinder newHTMLReader = new PageFinder(findService, urlDTO.getUrl(), siteEntity, forkJoinPool);
 
-                PageEntity page = new PageEntity();
-                page.setSiteEntityId(siteEntity);
-                page.setPath(link);
-                page.setContent(parseDTO.getDoc().toString());
-                page.setCode(parseDTO.getCode());
-                PageEntity pageFromDB = DataSet.getPageService().save(page);
-                DataSet.getSiteService().updateStatusTime(siteEntity);
-
-                if (pageFromDB != null) {
-                    DataSet.getLemmaService().findAndAddLemmas(siteEntity, pageFromDB);
-                }
-
-                Thread.sleep(2000);
+                Thread.sleep(500);
 
                 newHTMLReader.fork();
                 tasks.add(newHTMLReader);
             }
+        } catch (DataIntegrityViolationException dataIntegrityViolationException) {
+            System.out.println("Дубликат, запись уже присутствует.");
+        } catch (SocketTimeoutException socketTimeoutException) {
+            System.out.println("Время ожидания ответа страницы истекло.");
         } catch (InterruptedException interruptedException) {
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -95,7 +106,7 @@ public class PageFinder extends RecursiveAction {
 
         if (tasks == null) { return; }
         for (PageFinder task : tasks) {
-            if (DataSet.isSitesStopping()) {
+            if (DataSet.isSitesStop()) {
                 return;
             }
             task.join();

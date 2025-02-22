@@ -11,7 +11,9 @@ import java.util.Map;
 public interface IndexService {
     void saveToIndex(Map<String, Integer> lemmaMap, PageEntity page, SiteEntity site);
     List<IndexEntity> findAllByLemmaId(LemmaEntity lemma);
-    List<IndexEntity> findIndexesByLemma(LemmaEntity lemmaEntity);
+
+    List<IndexEntity> findAllByLemmaIdIn(List<LemmaEntity> lemmas);
+
     List<IndexEntity> findAllByPageId(PageEntity pageEntity);
     void deleteAll(List<IndexEntity> indexes);
 }

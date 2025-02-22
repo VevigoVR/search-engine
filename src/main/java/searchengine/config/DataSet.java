@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 import searchengine.dto.StatusSite;
+import searchengine.dto.response.SearchDataResponse;
 import searchengine.services.IndexService;
 import searchengine.services.LemmaService;
 import searchengine.services.PageService;
@@ -27,6 +28,9 @@ public class DataSet {
     private static IndexService indexService;
     @Getter
     private volatile static List<Site> sites = new ArrayList<>();
+    @Getter
+    @Setter
+    private static List<SearchDataResponse> response = new ArrayList<>();
 
     public DataSet(SiteService siteService, LemmaService lemmaService, PageService pageService, IndexService indexService) {
         DataSet.siteService = siteService;
@@ -47,6 +51,15 @@ public class DataSet {
     public static boolean isSitesStopping() {
         for (Site site : sites) {
             if (site.getStatus().equals(StatusSite.STOPPING)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isSitesStop() {
+        for (Site site : sites) {
+            if (!site.getStatus().equals(StatusSite.INDEXING)) {
                 return true;
             }
         }
