@@ -15,6 +15,7 @@ import searchengine.dto.entity.IndexEntity;
 import searchengine.dto.entity.LemmaEntity;
 import searchengine.dto.entity.PageEntity;
 import searchengine.dto.entity.SiteEntity;
+import searchengine.exceptions.MyBadRequestException;
 import searchengine.repositories.PageRepository;
 import searchengine.services.PageService;
 
@@ -58,29 +59,33 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
-    public void indexPage(CheckLink checkLink) throws IOException {
+    public void indexPage(CheckLink checkLink) {
         Optional<PageEntity> pageEntity = pageRepository.findByPathAndSiteEntityId(checkLink.getLink(), checkLink.getSiteEntity());
+        try {
 
-        PageEntity newPage = new PageEntity();
-        newPage.setSiteEntityId(checkLink.getSiteEntity());
-        newPage.setPath(checkLink.getLink());
-        ParseDTO parseDTO = parseHTML(checkLink.getFullLink());
-        newPage.setContent(parseDTO.getDoc().toString());
-        newPage.setCode(parseDTO.getCode());
+            PageEntity newPage = new PageEntity();
+            newPage.setSiteEntityId(checkLink.getSiteEntity());
+            newPage.setPath(checkLink.getLink());
+            ParseDTO parseDTO = parseHTML(checkLink.getFullLink());
+            if (parseDTO.getDoc() == null) { throw new MyBadRequestException("Ссылка не соответствует параметрам или не существует"); }
+            newPage.setContent(parseDTO.getDoc().toString());
+            newPage.setCode(parseDTO.getCode());
 
-        if (pageEntity.isPresent()) {
-            removeOldPageData(pageEntity.get(), checkLink.getSiteEntity());
-            pageRepository.delete(pageEntity.get());
+            if (pageEntity.isPresent()) {
+                removeOldPageData(pageEntity.get(), checkLink.getSiteEntity());
+                pageRepository.delete(pageEntity.get());
+            }
+
+            PageEntity pageFromDB = save(newPage);
+            DataSet.getSiteService().updateStatusTime(checkLink.getSiteEntity());
+            DataSet.getLemmaService().findAndAddLemmas(checkLink.getSiteEntity(), pageFromDB);
+        } catch (IOException exception) {
         }
-
-        PageEntity pageFromDB = save(newPage);
-        DataSet.getSiteService().updateStatusTime(checkLink.getSiteEntity());
-        DataSet.getLemmaService().findAndAddLemmas(checkLink.getSiteEntity(), pageFromDB);
     }
 
     @Override
     public CheckLink checkLink(CheckLink checkLink) {
-        if (urlNotToImgOrSmthForOnePage(checkLink.getFullLink(), checkLink.getSiteEntity().getUrl())) {
+        if (isUrlNotToImgOrSmthForOnePage(checkLink.getFullLink(), checkLink.getSiteEntity().getUrl())) {
             checkLink.setResult(true);
         } else {
             checkLink.setResult(false);
@@ -89,7 +94,7 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
-    public boolean urlNotToImgOrSmth(String link) {
+    public boolean isUrlNotToImgOrSmth(String link) {
         String[] currentLink = link.split("\\.");
         if (currentLink.length == 1) {
             return true;
@@ -103,7 +108,7 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
-    public boolean urlNotToImgOrSmthForOnePage(String link, String siteUrl) {
+    public boolean isUrlNotToImgOrSmthForOnePage(String link, String siteUrl) {
         String[] currentLink = link.split("\\.");
         String[] currentUrl = siteUrl.split("\\.");
         if (currentLink.length == currentUrl.length) {

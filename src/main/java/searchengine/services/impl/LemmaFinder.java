@@ -34,7 +34,7 @@ public class LemmaFinder {
      * @return ключ является леммой, а значение количеством найденных лемм
      */
     public Map<String, Integer> collectLemmas(String text) {
-        String[] words = arrayContainsRussianWords(text);
+        String[] words = containArrayRussianWords(text);
         HashMap<String, Integer> lemmas = new HashMap<>();
 
         for (String word : words) {
@@ -43,7 +43,7 @@ public class LemmaFinder {
             }
 
             List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
-            if (anyWordBaseBelongToParticle(wordBaseForms)) {
+            if (isAnyWordBaseBelongToParticle(wordBaseForms)) {
                 continue;
             }
 
@@ -70,12 +70,12 @@ public class LemmaFinder {
      * @return набор уникальных лемм найденных в тексте
      */
     public Set<String> getLemmaSet(String text) {
-        String[] textArray = arrayContainsRussianWords(text);
+        String[] textArray = containArrayRussianWords(text);
         Set<String> lemmaSet = new HashSet<>();
         for (String word : textArray) {
             if (!word.isEmpty() && isCorrectWordForm(word)) {
                 List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
-                if (anyWordBaseBelongToParticle(wordBaseForms)) {
+                if (isAnyWordBaseBelongToParticle(wordBaseForms)) {
                     continue;
                 }
                 lemmaSet.addAll(luceneMorphology.getNormalForms(word));
@@ -84,7 +84,7 @@ public class LemmaFinder {
         return lemmaSet;
     }
 
-    private boolean anyWordBaseBelongToParticle(List<String> wordBaseForms) {
+    private boolean isAnyWordBaseBelongToParticle(List<String> wordBaseForms) {
         return wordBaseForms.stream().anyMatch(this::hasParticleProperty);
     }
 
@@ -97,7 +97,7 @@ public class LemmaFinder {
         return false;
     }
 
-    private String[] arrayContainsRussianWords(String text) {
+    private String[] containArrayRussianWords(String text) {
         return text.toLowerCase(Locale.ROOT)
                 .replaceAll("([^а-я\\s])", " ")
                 .trim()

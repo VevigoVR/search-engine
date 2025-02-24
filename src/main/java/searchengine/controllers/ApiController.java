@@ -27,7 +27,7 @@ public class ApiController {
     }
 
     @PostMapping("/indexPage")
-    public SuccessResponse indexPage(@RequestParam String url) {
+    public SuccessResponse indexPage(@RequestParam String url) throws IOException {
         return siteService.indexPage(url);
     }
 

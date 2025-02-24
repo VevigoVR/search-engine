@@ -182,7 +182,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    public SuccessResponse indexPage(String url) {
+    public SuccessResponse indexPage(String url) throws IOException {
         CheckLink checkUrl = checkUrlAndSetLink(url);
         if (!checkUrl.isResult()) {
             throw new MyBadRequestException("Данная страница находится за пределами сайтов указанных в конфигурационном файле");
@@ -191,11 +191,9 @@ public class SiteServiceImpl implements SiteService {
         if (!checkLink.isResult()) {
             throw new MyBadRequestException("Ссылка не соответствует параметрам");
         }
-        try {
-            DataSet.getPageService().indexPage(checkLink);
-        } catch (IOException e) {
-            log.info("Ошибка индексирования страницы");
-        }
+
+        DataSet.getPageService().indexPage(checkLink);
+
         return new SuccessResponse();
     }
 }

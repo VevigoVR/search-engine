@@ -46,29 +46,11 @@ public class SearchServiceImpl implements SearchService {
         for (LemmaEntity lemmaEntity : foundLemmas) {
             siteEntities.add(lemmaEntity.getSiteEntityId());
         }
-
         List<List<SearchDataResponse>> results = new ArrayList<>();
-
         for (SiteEntity siteEntity : siteEntities) {
-            List<LemmaEntity> extractedLemmasForOneSite = new ArrayList<>();
-            for (LemmaEntity lemmaEntity : foundLemmas) {
-                if (!siteEntity.getName().equals(lemmaEntity.getSiteEntityId().getName())) {
-                    continue;
-                }
-                extractedLemmasForOneSite.add(lemmaEntity);
-            }
-            if (extractedLemmasForOneSite.isEmpty()) { continue; }
-            if (extractedLemmas.size() != extractedLemmasForOneSite.size()) { continue; }
-            List<LemmaEntity> excludedLemmasByFrequent = excludeLemmasByFrequent(extractedLemmasForOneSite);
-            if (excludedLemmasByFrequent.isEmpty()) { continue; }
-            List<LemmaEntity> sortedLemmasByFrequent = sortLemmasByFrequent(excludedLemmasByFrequent);
-            Map<Integer, IndexEntity> indexesByLemmas = searchPagesByLemmas(sortedLemmasByFrequent);
-            if (indexesByLemmas.isEmpty()) { continue; }
-            Set<RankDTO> pagesRelevance = calculateRank(indexesByLemmas);
-            List<RankDTO> pagesRelevanceSorted = sortPagesRelevance(pagesRelevance);
-            List<SearchDataResponse> searchDataResponses
-                    = convertPagesRelevanceToSearchDataResponses(sortedLemmasByFrequent, pagesRelevanceSorted);
-            List<SearchDataResponse> uniqueResult = getUniqueResult(searchDataResponses);
+            List<SearchDataResponse> uniqueResult = getResultForOneSite(siteEntity, foundLemmas, extractedLemmas);
+            if (uniqueResult == null) { continue; }
+            if (uniqueResult.isEmpty()) { continue; }
             results.add(uniqueResult);
         }
         List<SearchDataResponse> noSortResult = results.stream()
@@ -78,6 +60,29 @@ public class SearchServiceImpl implements SearchService {
         DataSet.setResponse(sortedSearchDataResponse);
         List<SearchDataResponse> result = getLimitResult(sortedSearchDataResponse,offset, limit);
         return new SearchResponse(true, sortedSearchDataResponse.size(), result);
+    }
+
+    private List<SearchDataResponse> getResultForOneSite(SiteEntity siteEntity, List<LemmaEntity> foundLemmas, List<String> extractedLemmas) throws IOException {
+        List<LemmaEntity> extractedLemmasForOneSite = new ArrayList<>();
+        for (LemmaEntity lemmaEntity : foundLemmas) {
+            if (!siteEntity.getName().equals(lemmaEntity.getSiteEntityId().getName())) {
+                continue;
+            }
+            extractedLemmasForOneSite.add(lemmaEntity);
+        }
+        if (extractedLemmasForOneSite.isEmpty()) { return null; }
+        if (extractedLemmas.size() != extractedLemmasForOneSite.size()) { return null; }
+        List<LemmaEntity> excludedLemmasByFrequent = excludeLemmasByFrequent(extractedLemmasForOneSite);
+        if (excludedLemmasByFrequent.isEmpty()) { return null; }
+        List<LemmaEntity> sortedLemmasByFrequent = sortLemmasByFrequent(excludedLemmasByFrequent);
+        Map<Integer, IndexEntity> indexesByLemmas = searchPagesByLemmas(sortedLemmasByFrequent);
+        if (indexesByLemmas.isEmpty()) { return null; }
+        Set<RankDTO> pagesRelevance = calculateRank(indexesByLemmas);
+        if (pagesRelevance.isEmpty()) { return null; }
+        List<RankDTO> pagesRelevanceSorted = sortPagesRelevance(pagesRelevance);
+        List<SearchDataResponse> searchDataResponses
+                = convertPagesRelevanceToSearchDataResponses(sortedLemmasByFrequent, pagesRelevanceSorted);
+        return getUniqueResult(searchDataResponses);
     }
 
     private List<String> extractLemmas(String query) throws IOException {
@@ -102,7 +107,7 @@ public class SearchServiceImpl implements SearchService {
             SiteEntity siteEntity = e.getSiteEntityId();
             long countPages = pageService.countBySiteEntityId(siteEntity);
             double frequency = (double) e.getFrequency();
-            double count = (double) countPages - (double) countPages / 100 * 10;
+            double count = (double) countPages - (double) countPages / 100 * 15;
             result = frequency > count;
             return result;
         });
@@ -133,7 +138,29 @@ public class SearchServiceImpl implements SearchService {
         return indexesByLemmas;
     }
 
+    private float calculateMaxRank(Map<Integer, IndexEntity> indexesByLemmas) {
+        float maxRank = 0;
+        Map<Integer, Float> pagesRanks = new HashMap<>();
+        for (IndexEntity indexEntity: indexesByLemmas.values()) {
+            int key = indexEntity.getPageId().getId();
+            if (pagesRanks.containsKey(key)) {
+                float value = pagesRanks.get(key);
+                pagesRanks.replace(key, value + indexEntity.getRank());
+            } else {
+                pagesRanks.put(key, indexEntity.getRank());
+            }
+        }
+        for (Float rank : pagesRanks.values()) {
+            if (maxRank < rank) {
+                maxRank = rank;
+            }
+        }
+
+        return maxRank;
+    }
+
     private Set<RankDTO> calculateRank(Map<Integer, IndexEntity> indexesByLemmas) {
+        float maxRank = calculateMaxRank(indexesByLemmas);
         Set<RankDTO> pagesRelevance = new HashSet<>();
         int pageId = indexesByLemmas.values().stream().toList().get(0).getPageId().getId();
         RankDTO rankPage = new RankDTO();
@@ -149,11 +176,10 @@ public class SearchServiceImpl implements SearchService {
             }
             rankPage.setPageId(index.getPageId().getId());
             rankPage.setAbsRelevance(rankPage.getAbsRelevance() + index.getRank());
-            if (rankPage.getMaxLemmaRank() < index.getRank()) rankPage.setMaxLemmaRank(index.getRank().intValue());
+            rankPage.setMaxLemmaRank(maxRank);
         }
         rankPage.setRelativeRelevance(rankPage.getAbsRelevance() / rankPage.getMaxLemmaRank());
         pagesRelevance.add(rankPage);
-
         return pagesRelevance;
     }
 
@@ -179,21 +205,59 @@ public class SearchServiceImpl implements SearchService {
                 if (sitePage.getUrl().endsWith("/")) {
                     sitePage.setUrl(sitePage.getUrl().substring(0, sitePage.getUrl().length()-1));
                 }
-                if (textFromElement.length() > 300) {
-                    textFromElement = new StringBuilder(textFromElement.substring(0));
-                }
+
+                StringBuilder trimmedTextFromElement = trimSentence(textFromElement, 300, 50);
+
                 searchDataResponses.add(new SearchDataResponse(
                         sitePage.getUrl(),
                         sitePage.getName(),
                         rank.getPageEntity().getPath(),
-                        doc.title(),
-                        textFromElement.toString(),
+                        doc.title().length() > 155 ? doc.title().substring(0, 150) : doc.title(),
+                        trimmedTextFromElement.toString(),
                         rank.getRelativeRelevance(),
                         searchWords
                 ));
             }
         }
         return searchDataResponses;
+    }
+
+    private StringBuilder trimSentence(StringBuilder textFromElement, int max, int offset) {
+        if (textFromElement.length() < max) {
+            return textFromElement;
+        }
+
+        int startIndex = textFromElement.indexOf("<b>");
+        textFromElement = new StringBuilder(textFromElement.substring(
+                        Math.max(0, startIndex - offset), Math.min(textFromElement.length(), startIndex + max)));
+
+        int firstIndex = 0;
+        if (startIndex > 0) {
+            firstIndex = textFromElement.indexOf(" ", 0);
+        }
+
+        if (firstIndex != -1 && firstIndex < offset) {
+            textFromElement = new StringBuilder(textFromElement.substring(firstIndex));
+        }
+
+        int endIndex = textFromElement.lastIndexOf(" ");
+        if ((endIndex - firstIndex) > (max / 2)) {
+            textFromElement = new StringBuilder(textFromElement.substring(0, endIndex));
+        }
+
+        return textFromElement;
+    }
+
+    private String clearWord(String word) {
+        char [] chars = word.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            if (!Character.isAlphabetic(chars[i])) {
+                chars[i] = '.';
+            }
+        }
+        word = new String(chars);
+        word = word.replaceAll("\\.", "");
+        return word;
     }
 
     private boolean isSetFull(List<String> simpleLemmasFromSearch, StringBuilder textFromElement, LemmaFinder lemmaFinder) throws IOException {
@@ -218,14 +282,7 @@ public class SearchServiceImpl implements SearchService {
         int searchWords = 0;
 
         for (String word : words) {
-            char [] chars = word.toCharArray();
-            for (int i = 0; i < chars.length; i++) {
-                if (!Character.isAlphabetic(chars[i])) {
-                    chars[i] = '.';
-                }
-            }
-            word = new String(chars);
-            word = word.replaceAll("\\.", "");
+            word = clearWord(word);
             String lemmaFromWord = lemmaFinder.getLemmaByWord(word.replaceAll("\\p{Punct}", ""));
             if (simpleLemmasFromSearch.contains(lemmaFromWord)) {
                 markWord(textFromElement, word);

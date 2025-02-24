@@ -81,7 +81,7 @@ public class LemmaServiceImpl implements LemmaService {
     public void insertOrUpdateLemmaFromTable(List<String> lemmas, SiteEntity siteEntity, PageEntity page) {
 
         List<LemmaEntity> lemmasFromDB = findAllByLemmaInAndSiteEntityId(lemmas, siteEntity);
-        List<LemmaEntity> lemmasFromPage = fromStringToObjects(lemmas, siteEntity);
+        List<LemmaEntity> lemmasFromPage = getFromStringToObjects(lemmas, siteEntity);
         if (lemmasFromDB.isEmpty()) {
             saveAll(lemmasFromPage);
             return;
@@ -108,7 +108,7 @@ public class LemmaServiceImpl implements LemmaService {
         saveAll(lemmasForSave);
     }
 
-    public List<LemmaEntity> fromStringToObjects(List<String> lemmas, SiteEntity siteEntity) {
+    public List<LemmaEntity> getFromStringToObjects(List<String> lemmas, SiteEntity siteEntity) {
         List<LemmaEntity> lemmaList = new ArrayList<>();
         lemmas.forEach(lemma -> {
             LemmaEntity lemmaEntity = new LemmaEntity();

@@ -48,25 +48,18 @@ public class PageFinder extends RecursiveAction {
     @Override
     synchronized
     protected void compute() {
-        if (DataSet.isSitesStop()) {
-            return;
-        }
+        if (DataSet.isSitesStop()) { return; }
         try {
             List<String> links = new ArrayList<>();
             ParseDTO parseDTO = parseHTML(url);
             Elements elements = parseDTO.getElements();
-            if (elements == null) {
-                return;
-            }
+            if (elements == null) { return; }
             elements.forEach(element -> {
                 links.add(element.attr("href"));
             });
 
             PageEntity page = new PageEntity();
             page.setSiteEntityId(siteEntity);
-            System.out.println("url: " + url);
-            System.out.println("path: " + url.replace(mainUrl, "/"));
-            System.out.println("mainUrl: " + mainUrl);
             page.setPath(url.replace(mainUrl, "/"));
             page.setContent(parseDTO.getDoc().toString());
             page.setCode(parseDTO.getCode());
@@ -80,13 +73,11 @@ public class PageFinder extends RecursiveAction {
             }
 
             for (String link : links) {
-                if (DataSet.isSitesStop()) {
-                    return;
-                }
+                if (DataSet.isSitesStop()) { return; }
                 UrlDTO urlDTO = constractUrlFromThisSite(link);
                 if (!urlDTO.isEnabled()) { continue; }
                 link = removeParamFromLink(urlDTO.getLink());
-                if (!DataSet.getPageService().urlNotToImgOrSmth(link)) { continue; }
+                if (!DataSet.getPageService().isUrlNotToImgOrSmth(link)) { continue; }
                 if (!findService.getAllLinks().add(link)) { continue; }
                 PageFinder newHTMLReader = new PageFinder(findService, urlDTO.getUrl(), siteEntity, forkJoinPool);
 
@@ -95,20 +86,13 @@ public class PageFinder extends RecursiveAction {
                 newHTMLReader.fork();
                 tasks.add(newHTMLReader);
             }
-        } catch (DataIntegrityViolationException dataIntegrityViolationException) {
-            System.out.println("Дубликат, запись уже присутствует.");
-        } catch (SocketTimeoutException socketTimeoutException) {
-            System.out.println("Время ожидания ответа страницы истекло.");
-        } catch (InterruptedException interruptedException) {
         } catch (Exception exception) {
-            exception.printStackTrace();
+            System.out.println("Время ожидания превышено: main exception");
         }
 
         if (tasks == null) { return; }
         for (PageFinder task : tasks) {
-            if (DataSet.isSitesStop()) {
-                return;
-            }
+            if (DataSet.isSitesStop()) { return; }
             task.join();
         }
     }

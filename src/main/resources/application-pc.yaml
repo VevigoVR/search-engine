@@ -6,24 +6,17 @@ indexing-settings:
       name: Лента.ру
     - url: https://www.skillbox.ru/
       name: Skillbox
-    - url: https://www.playback.ru
-      name: PlayBack.Ru
+    - url: https://html-templates.info/
+      name: Html-templates
 
 server:
-  port: 443
-  ssl:
-    key-store: /etc/letsencrypt/live/creazione.ru/keystore.p12
-    key-store-password: HJKGF576..HJKHjer8586hfkjJU7%gllGrwdKK
-    keyStoreType: PKCS12
-    keyAlias: tomcat
-  http:
-    port: 80
+  port: 8080
 
 spring:
   datasource:
     url: jdbc:postgresql://localhost/search_engine
-    username: door
-    password: door
+    username: postgres
+    password: postgres
   jpa:
     show-sql: false
     generate-ddl: false

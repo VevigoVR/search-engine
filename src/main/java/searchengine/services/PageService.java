@@ -14,8 +14,8 @@ public interface PageService {
     PageEntity findByPath(String path);
     void delete(PageEntity pageEntity);
 
-    boolean urlNotToImgOrSmth(String link);
-    boolean urlNotToImgOrSmthForOnePage(String link, String siteUrl);
+    boolean isUrlNotToImgOrSmth(String link);
+    boolean isUrlNotToImgOrSmthForOnePage(String link, String siteUrl);
     CheckLink checkLink(CheckLink checkLink);
     void indexPage(CheckLink checkLink) throws IOException;
 }

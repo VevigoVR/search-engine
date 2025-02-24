@@ -6,12 +6,13 @@ import searchengine.dto.StatusSite;
 import searchengine.dto.entity.SiteEntity;
 import searchengine.dto.response.SuccessResponse;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface SiteService {
     SuccessResponse startIndexing();
     SuccessResponse stopIndexing();
-    SuccessResponse indexPage(String url);
+    SuccessResponse indexPage(String url) throws IOException;
 
     SiteEntity save(SiteEntity siteEntity);
     List<SiteEntity> saveAll(StatusSite statusSite);
